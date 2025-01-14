@@ -1,2 +1,5 @@
-# shapes
-3d printing
+# shapes/
+3D-Printing stuff by Orion Elenzil
+
+[Models](./models/README.md)  
+[Tools](./tools/README.md)
