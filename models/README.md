@@ -1,8 +1,10 @@
 # shapes/models
 Model files for 3D printing.
 
-[Utilities](./utilities/README.md)  
+[Practical](./practical/README.md)  
 
 [Textiles](./textiles/README.md)  
 
-[Practical](./practical/README.md)  
+[Tiles](./tiles/README.md)  
+
+[Utilities](./utilities/README.md)  
