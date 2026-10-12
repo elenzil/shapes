@@ -30,8 +30,6 @@ FRAME_LATERAL_THICKNESS=2.5  # mm
 FRAME_LATERAL_PADDING=2    # mm
 
 
-
-
 make_frame() {
     local _FRAME_ABOVE_RELIEF="$1"
     local _FRAME_LATERAL_THICKNESS="$2"
@@ -178,12 +176,33 @@ run_stage() {
     done
 }
 
-run_stage export
-run_stage relief
-run_stage merge
+
+STAGE="${1:-export}"
+
+case "$STAGE" in
+    export)
+        run_stage export
+        run_stage relief
+        run_stage merge
+        ;;
+
+    relief)
+        run_stage relief
+        run_stage merge
+        ;;
+
+    merge)
+        run_stage merge
+        ;;
+
+    *)
+        echo "Usage: $0 [export|relief|merge]" >&2
+        exit 1
+        ;;
+esac
+
 
 for image in "${IMAGES[@]}"; do
-    bas="${NAME}_${VERSION}_${image}"
-    echo "open \"${bas}.png\""
+    local bas="${NAME}_${VERSION}_${image}"
     echo "open \"${bas}.stl\""
 done
