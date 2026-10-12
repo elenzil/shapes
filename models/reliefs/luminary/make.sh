@@ -5,75 +5,111 @@ NAME="luminary"
 IMAGE_VERSION=120
 CONFIG_VERSION="02"
 
-BASE=1.5            # mm
-RISE=2.5            # mm
-SIZE_SQUARE=75      # mm
-SIZE_WIDE=115       # mm
-
-IMAGE_HEIGHT=700    # pixels
-BLUR_RADIUS=1.2     # pixels
-
 # left and right images are 1000x1000
 # front, top, and back are 1527x1000
+IMAGE_HEIGHT=700           # pixels
+BLUR_RADIUS=1.2            # pixels
+
+# thickness of the base of the relief print. doesn't affect relief.
+BASE=1.0                   # mm
+
+# maximum variation in relief altitude.
+RISE=2.5                   # mm
+
+# specific for this project
+SIZE_SQUARE=75             # mm
+SIZE_WIDE=115              # mm
+
+# minimum thickness of the porcelain.
+FRAME_ABOVE_RELIEF=2       # mm
+
+# width of the frame wall
+FRAME_LATERAL_THICKNESS=2.5  # mm
+
+# margin between relief and wall
+FRAME_LATERAL_PADDING=2    # mm
+
+
+
+
+make_frame() {
+    local _FRAME_ABOVE_RELIEF="$1"
+    local _FRAME_LATERAL_THICKNESS="$2"
+    local _FRAME_LATERAL_PADDING="$3"
+    local FRAME_WIDTH="$4"
+    local FRAME_DEPTH="$5"
+    local FRAME_RELIEF_PEAK="$6"
+    local FRAME_BASE_Z="$7"
+    local STL_FRAME="$8"
+
+    # derived parameters
+    local FRAME_LATERAL_TOTALPAD=$(( (_FRAME_LATERAL_PADDING + _FRAME_LATERAL_THICKNESS) * 2 ))
+    local FRAME_OUTER_HEIGHT=$((FRAME_RELIEF_PEAK + _FRAME_ABOVE_RELIEF))
+    local FRAME_OUTER_WIDTH=$((FRAME_WIDTH + FRAME_LATERAL_TOTALPAD))
+    local FRAME_OUTER_DEPTH=$((FRAME_DEPTH + FRAME_LATERAL_TOTALPAD))
+    local FRAME_CAVITY_HEIGHT=$FRAME_OUTER_HEIGHT
+    local FRAME_CAVITY_WIDTH=$((FRAME_OUTER_WIDTH - _FRAME_LATERAL_THICKNESS * 2))
+    local FRAME_CAVITY_DEPTH=$((FRAME_OUTER_DEPTH - _FRAME_LATERAL_THICKNESS * 2))
+    local FRAME_CAVITY_OFFSET_Z=$FRAME_BASE_Z
+    local FRAME_OUTER_OFFSET_Z=$((FRAME_OUTER_HEIGHT / 2))
+
+    # temporary STL files
+    local STL_PREFIX="_${STL_FRAME:r}"
+    local STL_CUBE="${STL_PREFIX}_cube.stl"
+    local STL_FRAME_OUTER="${STL_PREFIX}_outer.stl"
+    local STL_FRAME_CAVITY="${STL_PREFIX}_cavity.stl"
+    local STL_FRAME_1="${STL_PREFIX}_1.stl"
+
+    stl_cube -w 1 "${STL_CUBE}"
+
+    stl_transform                  \
+        -sx $FRAME_OUTER_WIDTH     \
+        -sy $FRAME_OUTER_DEPTH     \
+        -sz $FRAME_OUTER_HEIGHT    \
+        "${STL_CUBE}" "${STL_FRAME_OUTER}"
+
+    stl_transform                  \
+        -sx $FRAME_CAVITY_WIDTH    \
+        -sy $FRAME_CAVITY_DEPTH    \
+        -sz $FRAME_CAVITY_HEIGHT   \
+        -tz $FRAME_CAVITY_OFFSET_Z \
+        "${STL_CUBE}" "${STL_FRAME_CAVITY}"
+
+    stl_boolean \
+        -a "${STL_FRAME_OUTER}" \
+        -b "${STL_FRAME_CAVITY}" \
+        -d "${STL_FRAME_1}"
+
+    stl_transform                 \
+        -tz $FRAME_OUTER_OFFSET_Z \
+        "${STL_FRAME_1}" "${STL_FRAME}"
+}
+
 
 # frame generation. All values in mm.
-FRAME_ABOVE_RELIEF=2
-FRAME_LATERAL_THICKNESS=4
-FRAME_LATERAL_PADDING=3
-FRAME_WIDTH=$SIZE_WIDE
-FRAME_DEPTH=$SIZE_SQUARE
-FRAME_RELIEF_PEAK=$(( BASE + RISE ))
-FRAME_BASE_Z=$BASE
 
-FRAME_LATERAL_TOTALPAD=$(( (FRAME_LATERAL_PADDING + FRAME_LATERAL_THICKNESS) * 2 ))
-FRAME_OUTER_HEIGHT=$((FRAME_RELIEF_PEAK + FRAME_ABOVE_RELIEF))
-FRAME_OUTER_WIDTH=$((FRAME_WIDTH + FRAME_LATERAL_TOTALPAD ))
-FRAME_OUTER_DEPTH=$((FRAME_DEPTH + FRAME_LATERAL_TOTALPAD ))
-FRAME_CAVITY_HEIGHT=$FRAME_OUTER_HEIGHT
-FRAME_CAVITY_WIDTH=$((FRAME_OUTER_WIDTH - FRAME_LATERAL_THICKNESS * 2))
-FRAME_CAVITY_DEPTH=$((FRAME_OUTER_DEPTH - FRAME_LATERAL_THICKNESS * 2))
-FRAME_CAVITY_OFFSET_Z=$((FRAME_BASE_Z))
-FRAME_OUTER_OFFSET_Z=$((FRAME_OUTER_HEIGHT / 2))
+local STL_FRAME_WIDE="frame_wide.stl"
+local STL_FRAME_SQUARE="frame_square.stl"
 
-echo $FRAME_ABOVE_RELIEF
-echo $FRAME_OUTER_HEIGHT
-echo $FRAME_OUTER_WIDTH
-echo $FRAME_OUTER_DEPTH
-echo $FRAME_CAVITY_HEIGHT
-echo $FRAME_CAVITY_WIDTH
-echo $FRAME_CAVITY_DEPTH
-echo $FRAME_OUTER_OFFSET_Z
+make_frame                   \
+    $FRAME_ABOVE_RELIEF      \
+    $FRAME_LATERAL_THICKNESS \
+    $FRAME_LATERAL_PADDING   \
+    $SIZE_WIDE               \
+    $SIZE_SQUARE             \
+    $((BASE + RISE))         \
+    $BASE                    \
+    "$STL_FRAME_WIDE"
 
-STL_PREFIX="_"
-STL_CUBE="${STL_PREFIX}cube.stl"
-STL_FRAME_OUTER="${STL_PREFIX}frame_outer.stl"
-STL_FRAME_CAVITY="${STL_PREFIX}frame_cavity.stl"
-STL_FRAME_1="${STL_PREFIX}frame_1.stl"
-STL_FRAME="${STL_PREFIX}frame.stl"
-
-stl_cube       -w 1 "${STL_CUBE}"
-
-stl_transform                  \
-    -sx $FRAME_OUTER_WIDTH     \
-    -sy $FRAME_OUTER_DEPTH     \
-    -sz $FRAME_OUTER_HEIGHT    \
-    "${STL_CUBE}" "${STL_FRAME_OUTER}"
-
-stl_transform                  \
-    -sx $FRAME_CAVITY_WIDTH    \
-    -sy $FRAME_CAVITY_DEPTH    \
-    -sz $FRAME_CAVITY_HEIGHT   \
-    -tz $FRAME_CAVITY_OFFSET_Z \
-    "${STL_CUBE}" "${STL_FRAME_CAVITY}"
-
-stl_boolean -a "${STL_FRAME_OUTER}" -b "${STL_FRAME_CAVITY}" -d "$STL_FRAME_1"
-
-stl_transform                  \
-    -tz $FRAME_OUTER_OFFSET_Z  \
-    "${STL_FRAME_1}" "${STL_FRAME}"
-
-
-exit
+make_frame                   \
+    $FRAME_ABOVE_RELIEF      \
+    $FRAME_LATERAL_THICKNESS \
+    $FRAME_LATERAL_PADDING   \
+    $SIZE_SQUARE             \
+    $SIZE_SQUARE             \
+    $((BASE + RISE))         \
+    $BASE                    \
+    "$STL_FRAME_SQUARE"
 
 
 IMAGES=()
@@ -81,24 +117,24 @@ SIZES=()
 FRAMES=()
 
 IMAGES+=("frnt")
-SIZES+=(SIZE_WIDE)
-FRAMES+=("frame_wide.stl")
+SIZES+=($SIZE_WIDE)
+FRAMES+=($STL_FRAME_WIDE)
 
 IMAGES+=("left")
-SIZES+=(75)
-FRAMES+=("frame_square.stl")
+SIZES+=($SIZE_SQUARE)
+FRAMES+=($STL_FRAME_SQUARE)
 
 IMAGES+=("rght")
-SIZES+=(75)
-FRAMES+=("frame_square.stl")
+SIZES+=($SIZE_SQUARE)
+FRAMES+=($STL_FRAME_SQUARE)
 
 IMAGES+=("back")
-SIZES+=(SIZE_WIDE)
-FRAMES+=("frame_wide.stl")
+SIZES+=($SIZE_WIDE)
+FRAMES+=($STL_FRAME_WIDE)
 
 IMAGES+=("top2")
-SIZES+=(SIZE_WIDE)
-FRAMES+=("frame_wide.stl")
+SIZES+=($SIZE_WIDE)
+FRAMES+=($STL_FRAME_WIDE)
 
 
 VERSION="${IMAGE_VERSION}_${CONFIG_VERSION}"
@@ -108,7 +144,7 @@ run_stage() {
     local stage="$1"
     local n image size frame bas pxd png rlf out
 
-    for (( n=0; n<COUNT; n++ )); do
+    for (( n=1; n<=COUNT; n++ )); do
         image="${IMAGES[n]}"
         size="${SIZES[n]}"
         frame="${FRAMES[n]}"
@@ -129,8 +165,8 @@ run_stage() {
                 echo "Relief ${png} -> ${rlf} .."
                 relief "$png" "$rlf" \
                     --valley "$BASE" \
-                    --rise "$RISE" \
-                    --size "$size" \
+                    --rise "$RISE"   \
+                    --size "$size"   \
                     --flip
                 ;;
 

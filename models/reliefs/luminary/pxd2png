@@ -63,14 +63,13 @@ if [[ -n "$blur" ]]; then
     fi
 fi
 
-osascript - "$input" "$output" "$height" "$blur" <<'APPLESCRIPT'
+osascript - "$input" "$output" "$height" "$blur" >/dev/null <<'APPLESCRIPT'
 on run argv
     set inputFile to POSIX file (item 1 of argv)
     set outputFile to (POSIX file (item 2 of argv)) as text
     set requestedHeight to item 3 of argv
     set requestedBlur to item 4 of argv
 
-    set wasRunning to application "Pixelmator Pro" is running
     set openedDoc to missing value
 
     tell application "Pixelmator Pro"
@@ -107,16 +106,10 @@ on run argv
                 end try
             end if
 
-            -- if not wasRunning then
-            --     try
-            --         quit
-            --     end try
-            -- end if
-
             error errMsg number errNum
         end try
-
-        -- if not wasRunning then quit
     end tell
+
+    return ""
 end run
 APPLESCRIPT
