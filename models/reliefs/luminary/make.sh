@@ -29,6 +29,33 @@ FRAME_LATERAL_THICKNESS=2.5  # mm
 # margin between relief and wall
 FRAME_LATERAL_PADDING=2    # mm
 
+# these can be anything
+STL_FRAME_WIDE="frame_wide.stl"
+STL_FRAME_SQUARE="frame_square.stl"
+
+IMAGES=()
+SIZES=()
+FRAMES=()
+
+IMAGES+=("frnt")
+SIZES+=($SIZE_WIDE)
+FRAMES+=($STL_FRAME_WIDE)
+
+IMAGES+=("left")
+SIZES+=($SIZE_SQUARE)
+FRAMES+=($STL_FRAME_SQUARE)
+
+IMAGES+=("rght")
+SIZES+=($SIZE_SQUARE)
+FRAMES+=($STL_FRAME_SQUARE)
+
+IMAGES+=("back")
+SIZES+=($SIZE_WIDE)
+FRAMES+=($STL_FRAME_WIDE)
+
+IMAGES+=("top3")
+SIZES+=($SIZE_WIDE)
+FRAMES+=($STL_FRAME_WIDE)
 
 make_frame() {
     local _FRAME_ABOVE_RELIEF="$1"
@@ -85,10 +112,6 @@ make_frame() {
 
 
 # frame generation. All values in mm.
-
-local STL_FRAME_WIDE="frame_wide.stl"
-local STL_FRAME_SQUARE="frame_square.stl"
-
 make_frame                   \
     $FRAME_ABOVE_RELIEF      \
     $FRAME_LATERAL_THICKNESS \
@@ -108,31 +131,6 @@ make_frame                   \
     $((BASE + RISE))         \
     $BASE                    \
     "$STL_FRAME_SQUARE"
-
-
-IMAGES=()
-SIZES=()
-FRAMES=()
-
-IMAGES+=("frnt")
-SIZES+=($SIZE_WIDE)
-FRAMES+=($STL_FRAME_WIDE)
-
-IMAGES+=("left")
-SIZES+=($SIZE_SQUARE)
-FRAMES+=($STL_FRAME_SQUARE)
-
-IMAGES+=("rght")
-SIZES+=($SIZE_SQUARE)
-FRAMES+=($STL_FRAME_SQUARE)
-
-IMAGES+=("back")
-SIZES+=($SIZE_WIDE)
-FRAMES+=($STL_FRAME_WIDE)
-
-IMAGES+=("top2")
-SIZES+=($SIZE_WIDE)
-FRAMES+=($STL_FRAME_WIDE)
 
 
 VERSION="${IMAGE_VERSION}_${CONFIG_VERSION}"
