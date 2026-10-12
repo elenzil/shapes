@@ -1,0 +1,122 @@
+#!/bin/bash
+set -euo pipefail
+
+usage() {
+    echo "Usage: $(basename "$0") input.pxd [output.png] [height] [blur_radius]" >&2
+    echo "Converts a Pixelmator Pro .pxd file to PNG." >&2
+    echo "If output.png is omitted, writes alongside the input file." >&2
+    echo "If height is specified, resizes proportionally to that height." >&2
+    echo "If blur_radius is specified, applies Gaussian blur before resizing." >&2
+}
+
+if (( $# < 1 || $# > 4 )); then
+    usage
+    exit 1
+fi
+
+if [[ ! -f "$1" || ! -r "$1" ]]; then
+    echo "Error: Cannot read input file: $1" >&2
+    exit 1
+fi
+
+input="$(cd "$(dirname "$1")" && pwd -P)/$(basename "$1")"
+
+if [[ $# -eq 1 ]]; then
+    if [[ "$input" != *.pxd ]]; then
+        echo "Error: Input filename must end in .pxd" >&2
+        exit 1
+    fi
+    output="${input%.pxd}.png"
+else
+    output="$2"
+fi
+
+output_dir="$(dirname "$output")"
+
+if [[ ! -d "$output_dir" || ! -w "$output_dir" ]]; then
+    echo "Error: Output directory is not writable: $output_dir" >&2
+    exit 1
+fi
+
+output="$(cd "$output_dir" && pwd -P)/$(basename "$output")"
+
+if [[ "$input" == "$output" || ( -e "$output" && "$input" -ef "$output" ) ]]; then
+    echo "Error: Input and output refer to the same file." >&2
+    exit 1
+fi
+
+height="${3:-}"
+blur="${4:-}"
+
+if [[ -n "$height" ]]; then
+    if [[ ! "$height" =~ ^[0-9]+$ ]] || (( 10#$height < 1 )); then
+        echo "Error: Height must be a positive integer." >&2
+        exit 1
+    fi
+    height="$((10#$height))"
+fi
+
+if [[ -n "$blur" ]]; then
+    if [[ ! "$blur" =~ ^([0-9]+([.][0-9]*)?|[.][0-9]+)$ ]]; then
+        echo "Error: Blur radius must be a nonnegative number." >&2
+        exit 1
+    fi
+fi
+
+osascript - "$input" "$output" "$height" "$blur" <<'APPLESCRIPT'
+on run argv
+    set inputFile to POSIX file (item 1 of argv)
+    set outputFile to (POSIX file (item 2 of argv)) as text
+    set requestedHeight to item 3 of argv
+    set requestedBlur to item 4 of argv
+
+    set wasRunning to application "Pixelmator Pro" is running
+    set openedDoc to missing value
+
+    tell application "Pixelmator Pro"
+        try
+            set openedDoc to open inputFile
+
+            -- Apply Gaussian blur at original resolution
+            if requestedBlur is not "" then
+                set blurRadius to requestedBlur as real
+
+                tell openedDoc
+                    set effectsLayer to make new effects layer at beginning of layers
+                    make new gaussian effect at beginning of effects of effectsLayer with properties {radius:blurRadius}
+                end tell
+            end if
+
+            -- Resize proportionally to requested height
+            if requestedHeight is not "" then
+                set targetHeight to requestedHeight as integer
+                tell openedDoc to resize image height targetHeight
+            end if
+
+            -- Export PNG
+            export openedDoc to file outputFile as PNG
+
+            -- Close without modifying original
+            close openedDoc saving no
+            set openedDoc to missing value
+
+        on error errMsg number errNum
+            if openedDoc is not missing value then
+                try
+                    close openedDoc saving no
+                end try
+            end if
+
+            -- if not wasRunning then
+            --     try
+            --         quit
+            --     end try
+            -- end if
+
+            error errMsg number errNum
+        end try
+
+        -- if not wasRunning then quit
+    end tell
+end run
+APPLESCRIPT
