@@ -7,27 +7,29 @@ CONFIG_VERSION="02"
 
 # left and right images are 1000x1000
 # front, top, and back are 1527x1000
-IMAGE_HEIGHT=700           # pixels
+IMAGE_HEIGHT=1000          # pixels
 BLUR_RADIUS=1.2            # pixels
 
-# thickness of the base of the relief print. doesn't affect relief.
-BASE=1.0                   # mm
+# Thickness of the base of the relief print. doesn't affect relief.
+# You might want this thicker than seemingly necessary
+# to increase the space for the clay slicer to pass over.
+BASE=3.0                   # mm
 
 # maximum variation in relief altitude.
-RISE=2.5                   # mm
+RISE=2.5                    # mm
 
 # specific for this project
-SIZE_SQUARE=75             # mm
-SIZE_WIDE=115              # mm
+SIZE_SQUARE=75              # mm
+SIZE_WIDE=115               # mm
 
 # minimum thickness of the porcelain.
-FRAME_ABOVE_RELIEF=2       # mm
+FRAME_ABOVE_RELIEF=2.25     # mm
 
 # width of the frame wall
-FRAME_LATERAL_THICKNESS=2.5  # mm
+FRAME_LATERAL_THICKNESS=2.5 # mm
 
-# margin between relief and wall
-FRAME_LATERAL_PADDING=2    # mm
+# lateral margin between relief and wall
+FRAME_LATERAL_PADDING=2     # mm
 
 # these can be anything
 STL_FRAME_WIDE="frame_wide.stl"
@@ -37,23 +39,23 @@ IMAGES=()
 SIZES=()
 FRAMES=()
 
-IMAGES+=("frnt")
+IMAGES+=("src_frnt")
 SIZES+=($SIZE_WIDE)
 FRAMES+=($STL_FRAME_WIDE)
 
-IMAGES+=("left")
+IMAGES+=("src_left")
 SIZES+=($SIZE_SQUARE)
 FRAMES+=($STL_FRAME_SQUARE)
 
-IMAGES+=("rght")
+IMAGES+=("src_rght")
 SIZES+=($SIZE_SQUARE)
 FRAMES+=($STL_FRAME_SQUARE)
 
-IMAGES+=("back")
+IMAGES+=("src_back")
 SIZES+=($SIZE_WIDE)
 FRAMES+=($STL_FRAME_WIDE)
 
-IMAGES+=("top3")
+IMAGES+=("src_top3")
 SIZES+=($SIZE_WIDE)
 FRAMES+=($STL_FRAME_WIDE)
 
@@ -139,6 +141,8 @@ COUNT=${#IMAGES[@]}
 run_stage() {
     local stage="$1"
     local n image size frame bas pxd png rlf out
+
+    echo "Stage '${stage}'.."
 
     for (( n=1; n<=COUNT; n++ )); do
         image="${IMAGES[n]}"
