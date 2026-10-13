@@ -5,15 +5,20 @@ NAME="luminary"
 IMAGE_VERSION=120
 CONFIG_VERSION="02"
 
+INTERMEDIATE_DIR="intermediates"
+OUT_DIR="out"
+
+mkdir -p "$INTERMEDIATE_DIR" "$OUT_DIR"
+
 # left and right images are 1000x1000
 # front, top, and back are 1527x1000
-IMAGE_HEIGHT=1000          # pixels
-BLUR_RADIUS=1.2            # pixels
+IMAGE_HEIGHT=1000           # pixels
+BLUR_RADIUS=1.2             # pixels
 
 # Thickness of the base of the relief print. doesn't affect relief.
 # You might want this thicker than seemingly necessary
 # to increase the space for the clay slicer to pass over.
-BASE=3.0                   # mm
+BASE=3.0                    # mm
 
 # maximum variation in relief altitude.
 RISE=2.5                    # mm
@@ -32,8 +37,8 @@ FRAME_LATERAL_THICKNESS=2.5 # mm
 FRAME_LATERAL_PADDING=2     # mm
 
 # these can be anything
-STL_FRAME_WIDE="frame_wide.stl"
-STL_FRAME_SQUARE="frame_square.stl"
+STL_FRAME_WIDE="${INTERMEDIATE_DIR}/frame_wide.stl"
+STL_FRAME_SQUARE="${INTERMEDIATE_DIR}/frame_square.stl"
 
 IMAGES=()
 SIZES=()
@@ -59,6 +64,7 @@ IMAGES+=("src_top3")
 SIZES+=($SIZE_WIDE)
 FRAMES+=($STL_FRAME_WIDE)
 
+
 make_frame() {
     local _FRAME_ABOVE_RELIEF="$1"
     local _FRAME_LATERAL_THICKNESS="$2"
@@ -81,7 +87,8 @@ make_frame() {
     local FRAME_OUTER_OFFSET_Z=$((FRAME_OUTER_HEIGHT / 2))
 
     # temporary STL files
-    local STL_PREFIX="_${STL_FRAME:r}"
+    local STL_BASENAME="${STL_FRAME:t:r}"
+    local STL_PREFIX="${INTERMEDIATE_DIR}/_${STL_BASENAME}"
     local STL_CUBE="${STL_PREFIX}_cube.stl"
     local STL_FRAME_OUTER="${STL_PREFIX}_outer.stl"
     local STL_FRAME_CAVITY="${STL_PREFIX}_cavity.stl"
@@ -151,9 +158,9 @@ run_stage() {
 
         bas="${NAME}_${VERSION}_${image}"
         pxd="${image}_${IMAGE_VERSION}.pxd"
-        png="${bas}.png"
-        rlf="${bas}_rlf.stl"
-        out="${bas}.stl"
+        png="${INTERMEDIATE_DIR}/${bas}.png"
+        rlf="${INTERMEDIATE_DIR}/${bas}_rlf.stl"
+        out="${OUT_DIR}/${bas}.stl"
 
         case "$stage" in
             export)
@@ -206,5 +213,5 @@ esac
 
 for image in "${IMAGES[@]}"; do
     local bas="${NAME}_${VERSION}_${image}"
-    echo "open \"${bas}.stl\""
+    echo "open \"${OUT_DIR}/${bas}.stl\""
 done
